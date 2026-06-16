@@ -1,0 +1,40 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+}
+
+body {
+  font-family: var(--font-sans);
+}
+
+@media print {
+  /* Hide the entire body contents except the printable board container */
+  body * {
+    visibility: hidden !important;
+  }
+  
+  /* Show only the CV board container workboard and its nested components */
+  #printable-cv-board, #printable-cv-board * {
+    visibility: visible !important;
+  }
+  
+  /* Style the CV board for perfect, high-fidelity A4 paper layout alignment */
+  #printable-cv-board {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    background: white !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+}
+

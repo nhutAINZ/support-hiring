@@ -1,0 +1,6 @@
+{
+  "name": "Hệ Thống Tìm Kiếm & Tracking UV",
+  "description": "Hệ thống hỗ trợ cộng tác viên tự động tạo nội dung tuyển dụng bằng AI và tích hợp trình tạo CV chuyên nghiệp bằng công nghệ Gemini.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
