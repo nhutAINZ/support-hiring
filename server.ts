@@ -11,6 +11,18 @@ const PORT = 3000;
 
 app.use(express.json());
 
+// Enable CORS middleware for external client requests (e.g. Netlify)
+app.use((req, res, next) => {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  if (req.method === "OPTIONS") {
+    res.sendStatus(204);
+    return;
+  }
+  next();
+});
+
 // Lazy-initialize Gemini client to prevent server crash if key is missing on startup
 let aiClient: GoogleGenAI | null = null;
 function getGeminiClient(): GoogleGenAI {
@@ -31,6 +43,66 @@ function getGeminiClient(): GoogleGenAI {
   return aiClient;
 }
 
+// Helper function to invoke Gemini's generateContent with auto-retry and model fallback strategy
+async function generateContentWithRetry(
+  params: {
+    model: string;
+    contents: any;
+    config?: any;
+  },
+  retries = 3,
+  delayMs = 1200
+): Promise<any> {
+  const ai = getGeminiClient();
+  let currentModel = params.model;
+
+  // Use correct and active Gemini models instead of hypothetical nonexistent ones
+  if (currentModel === "gemini-3.5-flash" || currentModel === "gemini-2.5-flash") {
+    currentModel = "gemini-2.5-flash";
+  }
+
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      console.log(`[Gemini Request] Calling model ${currentModel} - Attempt ${attempt}/${retries}`);
+      return await ai.models.generateContent({
+        ...params,
+        model: currentModel,
+      });
+    } catch (error: any) {
+      console.error(`[Gemini Error] Attempt ${attempt}/${retries} failed for model ${currentModel}:`, error);
+
+      const errorMsg = String(error?.message || "");
+      const isTransient =
+        errorMsg.includes("503") ||
+        errorMsg.includes("UNAVAILABLE") ||
+        errorMsg.includes("high demand") ||
+        error?.status === 503 ||
+        error?.statusCode === 503 ||
+        error?.status === "UNAVAILABLE";
+
+      if (attempt === retries) {
+        throw error;
+      }
+
+      if (isTransient) {
+        // Fallback cascade to alternative real active models
+        if (currentModel === "gemini-2.5-flash") {
+          currentModel = "gemini-2.0-flash";
+          console.log(`[Gemini Fallback] High demand on gemini-2.5-flash. Switching to: ${currentModel}`);
+        } else if (currentModel === "gemini-2.0-flash") {
+          currentModel = "gemini-1.5-flash";
+          console.log(`[Gemini Fallback] Switching to: ${currentModel}`);
+        }
+        // Wait before retrying with some exponential delay
+        await new Promise((resolve) => setTimeout(resolve, delayMs * Math.pow(1.5, attempt - 1)));
+      } else {
+        // Non-transient errors, just wait slightly and retry
+        await new Promise((resolve) => setTimeout(resolve, 500));
+      }
+    }
+  }
+}
+
 // REST API for parsing raw JD text into separate structured fields via Gemini AI
 app.post("/api/gemini/parse-jd", async (req, res) => {
   try {
@@ -40,7 +112,6 @@ app.post("/api/gemini/parse-jd", async (req, res) => {
       return;
     }
 
-    const ai = getGeminiClient();
     const prompt = `Bạn là một chuyên gia nhân sự chuyên nghiệp tại Việt Nam. Hãy đọc kĩ văn bản mô tả công việc (JD) sau và phân tích, trích xuất thông tin một cách chuẩn xác nhất:
 
 VĂN BẢN JD GỐC:
@@ -59,8 +130,8 @@ Hãy điền thông tin trích xuất súc tích bằng tiếng Việt vào đú
 
 Trích xuất thông tin sát với thực tế trong JD đầu vào nhất có thể, tránh suy diễn hư cấu sai sự thật.`;
 
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
+    const response = await generateContentWithRetry({
+      model: "gemini-3.5-flash",
       contents: prompt,
       config: {
         responseMimeType: "application/json",
@@ -146,8 +217,8 @@ Hãy trả về kết quả dưới dạng cấu trúc JSON chính xác tuyệt 
 
 Chú ý: Trả về một khối JSON thuần túy mà không kèm theo markdown tag \`\`\`json ở đầu và cuối hoặc bất cứ ký tự bình luận nào thừa ngoài JSON, để có thể parse được luôn qua JSON.parse().`;
 
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
+    const response = await generateContentWithRetry({
+      model: "gemini-3.5-flash",
       contents: prompt,
       config: {
         responseMimeType: "application/json"
@@ -200,7 +271,7 @@ Hãy trả về kết quả dưới dạng cấu trúc JSON chính xác tuyệt 
 
 Chú ý: Trả về một khối JSON thuần túy không kèm markdown tag \`\`\`json hay bất cứ ký tự nào ngoài cấu trúc JSON, để có thể parse được ngay lập tức. Các từ khóa gợi ý nên bám sát thực tế tìm kiếm việc làm tại Việt Nam.`;
 
-    const response = await ai.models.generateContent({
+    const response = await generateContentWithRetry({
       model: "gemini-2.5-flash",
       contents: prompt,
       config: {
@@ -261,7 +332,7 @@ Trả về một đối tượng JSON chuẩn xác 100% với cấu trúc:
 
 Chú ý: Chỉ trả về chuỗi JSON thuần, tránh markdown tags \`\`\`json ở đầu và cuối hoặc bất cứ ký tự bình luận nào thừa để hệ thống JSON.parse() phân tách được lập tức.`;
 
-    const response = await ai.models.generateContent({
+    const response = await generateContentWithRetry({
       model: "gemini-2.5-flash",
       contents: prompt,
       config: {
@@ -316,7 +387,7 @@ app.post("/api/gemini/analyze-cv-image", async (req, res) => {
       Hãy cố gắng đọc chuẩn xác nhất dựa hoàn toàn vào dữ liệu chữ viết trên ảnh. Tránh suy đoán mơ hồ, không hư cấu các câu chuyện không có thật trong ảnh. Trả về đối tượng JSON đúng cấu trúc bên dưới.`
     };
 
-    const response = await ai.models.generateContent({
+    const response = await generateContentWithRetry({
       model: "gemini-2.5-flash",
       contents: { parts: [imagePart, textPart] },
       config: {
@@ -392,8 +463,8 @@ app.post("/api/gemini/generate-cv-polish", async (req, res) => {
 
     Chú ý: Trả về một khối JSON thuần túy không kèm bất cứ markdown tag hay văn bản thừa nào bên ngoài cấu trúc JSON.`;
 
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
+    const response = await generateContentWithRetry({
+      model: "gemini-3.5-flash",
       contents: prompt,
       config: {
         responseMimeType: "application/json",

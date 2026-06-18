@@ -5,26 +5,48 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>My Google AI Studio App</title>
     <script>
-      // Safe patch for iframe runtime where window.fetch has only a getter
+      // Super-robust safety patch to ensure window.fetch is writable across iframe and sandbox environments
       (function() {
         try {
-          var target = window;
-          var desc = Object.getOwnPropertyDescriptor(target, 'fetch');
-          if (!desc) {
-            target = Object.getPrototypeOf(window) || window;
-            desc = Object.getOwnPropertyDescriptor(target, 'fetch');
+          var originalFetch = window.fetch;
+          var storedFetch = originalFetch;
+
+          // 1. Try defining on Window.prototype, where fetch normally lives
+          if (typeof Window !== 'undefined' && Window.prototype) {
+            try {
+              Object.defineProperty(Window.prototype, 'fetch', {
+                get: function() { return storedFetch; },
+                set: function(val) { storedFetch = val; },
+                configurable: true,
+                enumerable: true
+              });
+            } catch (e1) {}
           }
-          if (desc && desc.get && !desc.set) {
-            var currentFetch = window.fetch;
-            Object.defineProperty(target, 'fetch', {
-              get: function() { return currentFetch; },
-              set: function(val) { currentFetch = val; },
+
+          // 2. Try defining directly on the window instance
+          try {
+            Object.defineProperty(window, 'fetch', {
+              get: function() { return storedFetch; },
+              set: function(val) { storedFetch = val; },
               configurable: true,
               enumerable: true
             });
+          } catch (e2) {
+            // 3. Fallback: try defining on the prototype chain of window if window itself is non-configurable
+            try {
+              var proto = Object.getPrototypeOf(window);
+              if (proto) {
+                Object.defineProperty(proto, 'fetch', {
+                  get: function() { return storedFetch; },
+                  set: function(val) { storedFetch = val; },
+                  configurable: true,
+                  enumerable: true
+                });
+              }
+            } catch (e3) {}
           }
-        } catch (e) {
-          console.warn("Safety patch for fetch failed to initialize:", e);
+        } catch (globalErr) {
+          console.warn("Safety patch for fetch failed to initialize:", globalErr);
         }
       })();
     </script>

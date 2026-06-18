@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { RecruitmentGroup } from "./types";
 import AiContentGenerator from "./components/AiContentGenerator";
 import CvGenerator from "./components/CvGenerator";
+import { API_BASE_URL } from "./config";
 import { 
   Sparkles, FileText
 } from "lucide-react";
@@ -94,7 +95,7 @@ export default function App() {
         {/* Action Button for User Guide */}
         <div className="px-4 py-2">
           <a
-            href="/api/download-guide"
+            href={API_BASE_URL + "/api/download-guide"}
             download="HDSD_He_Thong_Tuyen_Dung_AI.doc"
             className="w-full flex items-center justify-center gap-1.5 py-1.5 px-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded text-[11px] font-bold cursor-pointer transition-colors shadow-sm"
           >
@@ -130,7 +131,7 @@ export default function App() {
 
           <div className="flex items-center gap-2">
             <a
-              href="/api/download-guide"
+              href={API_BASE_URL + "/api/download-guide"}
               download="HDSD_He_Thong_Tuyen_Dung_AI.doc"
               className="flex items-center gap-1.5 py-1.5 px-3.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded text-xs font-bold border border-indigo-100 transition-colors cursor-pointer"
             >
