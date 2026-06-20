@@ -26,3 +26,37 @@ const getApiBaseUrl = (): string => {
 
 export const API_BASE_URL = getApiBaseUrl();
 
+/**
+ * Universal safe fetch utility for backend API calls.
+ * Provides custom, friendly, and actionable Vietnamese guidelines if a connection error (Failed to fetch)
+ * occurs when hosted on static platforms like Netlify.
+ */
+export async function fetchApi(path: string, options?: RequestInit): Promise<Response> {
+  const url = `${API_BASE_URL}${path}`;
+  try {
+    const response = await fetch(url, options);
+    return response;
+  } catch (error: any) {
+    // Determine if hosted on Netlify, Vercel or other external non-sandbox domain
+    const isExternalHost = typeof window !== 'undefined' && 
+      window.location && 
+      !window.location.hostname.includes("run.app") && 
+      window.location.hostname !== "localhost" && 
+      window.location.hostname !== "127.0.0.1";
+
+    if (isExternalHost) {
+      throw new Error(
+        `Không thể kết nối trực tiếp đến máy chủ thử nghiệm AI Studio từ Netlify do cơ chế bảo mật (IAP/CORS).\n\n` +
+        `💡 Hướng dẫn kết nối máy chủ cho Netlify:\n` +
+        `1. Netlify chỉ là hosting tĩnh (Frontend), không thể chạy file server.ts (Node/Express).\n` +
+        `2. Bạn cần triển khai backend (file server.ts) lên các nền tảng chạy server thực tế như Render.com, Cloud Run, hoặc Railway.\n` +
+        `3. Sau khi deploy backend, hãy cấu hình biến môi trường trên Netlify mang tên: VITE_API_URL trỏ thẳng tới link backend thực của bạn.\n` +
+        `4. Cách đơn giản hơn để kiểm tra toàn vẹn ứng dụng: Tải file ZIP từ Settings, giải nén và chạy 'npm run dev' tại máy cá nhân.`
+      );
+    }
+
+    throw new Error(`Không thể kết nối đến máy chủ backend (${url}). Vui lòng kiểm tra lại kết nối mạng hoặc thử lại sau.`);
+  }
+}
+
+

@@ -5,7 +5,7 @@ import {
   TrendingUp, Sparkles, Brain, Eye, EyeOff, BarChart3, Clock, MapPin
 } from "lucide-react";
 import { Candidate, CandidateStatus } from "../types";
-import { API_BASE_URL } from "../config";
+import { API_BASE_URL, fetchApi } from "../config";
 
 interface CandidateTableProps {
   candidates: Candidate[];
@@ -91,7 +91,7 @@ export default function CandidateTable({
   const handleRequestAiAnalysis = async () => {
     setLoadingAi(true);
     try {
-      const response = await fetch(API_BASE_URL + "/api/gemini/analyze-candidates", {
+      const response = await fetchApi("/api/gemini/analyze-candidates", {
         method: "POST",
         headers: {
           "Content-Type": "application/json"

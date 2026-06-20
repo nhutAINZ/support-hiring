@@ -1,4 +1,4 @@
-# support-hiring
+# 💎 AI RECRUITER SUITE - CÔNG CỤ HOẠT ĐỘNG TUYỂN DỤNG THÔNG MINH
 
 Chào mừng quý khách đến với tài liệu hướng dẫn sử dụng và triển khai **AI Recruiter Suite (v2.0)**. Ứng dụng là một giải pháp hỗ trợ các nhà tuyển dụng và Cộng tác viên (CTV) nâng cao hiệu năng tìm kiếm ứng viên nhờ sức mạnh của Trí tuệ Nhân tạo thông qua hai module chính: **Soạn tin tuyển dụng thông minh** và **Tạo CV đại diện AI**.
 

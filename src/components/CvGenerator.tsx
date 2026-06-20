@@ -5,7 +5,7 @@ import {
   MapPin, Check, Plus, Trash2, ArrowRight, Download, ExternalLink
 } from "lucide-react";
 import { Candidate, CandidateStatus } from "../types";
-import { API_BASE_URL } from "../config";
+import { API_BASE_URL, fetchApi } from "../config";
 
 // Helper for dynamically rendering high-fidelity PDFs client-side without relying on blocked iframe print dialogues
 const loadHtml2Pdf = (): Promise<any> => {
@@ -165,7 +165,7 @@ export default function CvGenerator({ onAddCandidate, ctvName }: CvGeneratorProp
       setAvatarBase64(base64String);
 
       try {
-        const response = await fetch(API_BASE_URL + "/api/gemini/analyze-cv-image", {
+        const response = await fetchApi("/api/gemini/analyze-cv-image", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -247,7 +247,7 @@ export default function CvGenerator({ onAddCandidate, ctvName }: CvGeneratorProp
     ].filter(Boolean).join(" | ");
 
     try {
-      const response = await fetch(API_BASE_URL + "/api/gemini/generate-cv-polish", {
+      const response = await fetchApi("/api/gemini/generate-cv-polish", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

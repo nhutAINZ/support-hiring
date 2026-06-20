@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Sparkles, Copy, Check, Search, ExternalLink, RefreshCw, MessageSquare, Briefcase, DollarSign, MapPin, Phone, Image as ImageIcon, Download, Palette, AlertCircle, Plus, Upload, ThumbsUp, HelpCircle } from "lucide-react";
 import { GeneratedPost, SuggestedGroupKeyword, RecruitmentGroup } from "../types";
-import { API_BASE_URL } from "../config";
+import { API_BASE_URL, fetchApi } from "../config";
 
 interface AiContentGeneratorProps {
   savedGroups?: RecruitmentGroup[];
@@ -57,7 +57,7 @@ export default function AiContentGenerator({ savedGroups = [], onAddGroup }: AiC
     setGeneratingPoster(true);
     setPosterError(null);
     try {
-      const res = await fetch(API_BASE_URL + "/api/gemini/generate-poster", {
+      const res = await fetchApi("/api/gemini/generate-poster", {
          method: "POST",
          headers: { "Content-Type": "application/json" },
          body: JSON.stringify({ role, company }),
@@ -195,7 +195,7 @@ export default function AiContentGenerator({ savedGroups = [], onAddGroup }: AiC
 
     setParsingJd(true);
     try {
-      const res = await fetch(API_BASE_URL + "/api/gemini/parse-jd", {
+      const res = await fetchApi("/api/gemini/parse-jd", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ jdText }),
@@ -231,7 +231,7 @@ export default function AiContentGenerator({ savedGroups = [], onAddGroup }: AiC
     setLoading(true);
     try {
       // 1. Generate text content
-      const contentRes = await fetch(API_BASE_URL + "/api/gemini/generate-content", {
+      const contentRes = await fetchApi("/api/gemini/generate-content", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ role, company, description, requirements, salary, location, contactInfo, tone }),
@@ -243,7 +243,7 @@ export default function AiContentGenerator({ savedGroups = [], onAddGroup }: AiC
       }
 
       // 2. Suggest search keywords
-      const groupsRes = await fetch(API_BASE_URL + "/api/gemini/suggest-groups", {
+      const groupsRes = await fetchApi("/api/gemini/suggest-groups", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ role, location }),
